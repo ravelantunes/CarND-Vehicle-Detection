@@ -44,27 +44,25 @@ def process_video(img):
 
     windows1, _ = utils.find_cars(img, 400, 656, 2.0, clf, scaler, p['orient'], p['pix_per_cell'], p['cell_per_block'],
                                   p['spatial_size'], p['hist_bins'])
-    # windows2, _ = utils.find_cars(img, 350, 550, 1.2, clf, scaler, p['orient'], p['pix_per_cell'], p['cell_per_block'],
-    #                               p['spatial_size'], p['hist_bins'])
+    hot_windows = windows1
+    windows2, _ = utils.find_cars(img, 350, 550, 1.2, clf, scaler, p['orient'], p['pix_per_cell'], p['cell_per_block'],
+                                  p['spatial_size'], p['hist_bins'])
+    # hot_windows = windows1 + windows2
     # windows3, _ = utils.find_cars(img, 350, 500, 0.8, clf, scaler, p['orient'], p['pix_per_cell'], p['cell_per_block'],
-                                  # p['spatial_size'], p['hist_bins'])
+    #                               p['spatial_size'], p['hist_bins'])
     # hot_windows = windows1 + windows2 + windows3
     # hot_windows = windows1 + windows2
-    hot_windows = windows1
+
 
     heatmap = utils.add_heat(previous_heatmap, hot_windows)
-    cache_for_previous = heatmap * 0.5
+    previous_heatmap = heatmap * 0.5
 
-    # Average heatmaps
-    average_heatmap = (heatmap + previous_heatmap) / 2
-    heatmap = utils.apply_threshold(average_heatmap, 5)
+    heatmap = utils.apply_threshold(heatmap, 10)
     img, states = utils.draw_labeled_bboxes(img, heatmap, previous_states)
-
-    previous_heatmap = cache_for_previous
 
     # Add new state, and remove last if bigger than 3
     previous_states.append(states)
-    number_of_states_to_keep = 5
+    number_of_states_to_keep = 10
     if len(previous_states) > number_of_states_to_keep:
         previous_states = previous_states[-number_of_states_to_keep:]
 

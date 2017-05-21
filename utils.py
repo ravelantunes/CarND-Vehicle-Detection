@@ -135,9 +135,6 @@ def draw_labeled_bboxes(img, heatmap, previous_states):
 
     # Iterate through all detected cars
     for car_number in range(1, labels[1] + 1):
-        # if car_number != 0:
-        #     continue
-
         # Find pixels with each car_number label value
         nonzero = (labels[0] == car_number).nonzero()
         # Identify x and y values of those pixels
@@ -151,18 +148,10 @@ def draw_labeled_bboxes(img, heatmap, previous_states):
         center = (int(bbox[0][0] + width/2), int(bbox[0][1] + height/2))
         area = width * height
         ratio = width/height
-        # print(area)
-        # centers.append(center)
 
         # Skip if the rectangle doesn' meet ratio and area specifications
         if ratio < 1.0 or area < 5000:
-            # cv2.rectangle(img, bbox[0], bbox[1], (255.0, 0.0, 50.0), 6)
-            # cv2.circle(img, center, 5, (0, 255.0, 0), -1)
-            # centers.append(center)
             continue
-
-        # cv2.circle(img, center, 5, (0, 255.0, 0), -1)
-        # cv2.rectangle(img, bbox[0], bbox[1], (0, 255.0, 50.0), 6)
 
         current_state = {
             'center': center,
@@ -301,8 +290,9 @@ def find_cars(img, ystart, ystop, scale, clf, X_scaler, orient, pix_per_cell, ce
             test_features = X_scaler.transform(
                 np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))
 
-            test_prediction = clf.predict(test_features)
-            if test_prediction == 1:
+            test_prediction = clf.decision_function(test_features)
+            # test_prediction = clf.predict(test_features)
+            if test_prediction > 0.5:
                 xbox_left = np.int(xleft * scale)
                 ytop_draw = np.int(ytop * scale)
                 win_draw = np.int(window * scale)
