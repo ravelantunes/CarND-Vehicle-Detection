@@ -1,13 +1,14 @@
 import glob
 import utils
-import parameters as p
+import parameters
 import numpy as np
 import time
 import pickle
 from sklearn.cross_validation import train_test_split
 from sklearn.preprocessing import StandardScaler
-
 import argparse
+p = parameters.get_parameters()
+
 parser = argparse.ArgumentParser(description='Remote Driving')
 parser.add_argument(
     'output',
@@ -49,26 +50,26 @@ for image in car_images:
 print('Loaded {} cars and {} not cars.'.format(len(cars), len(notcars)))
 
 # Traing a single record to get feature matrix size
-sample_feature_matrix = utils.extract_features([cars[0]], color_space=p.color_space,
-                        spatial_size=p.spatial_size, hist_bins=p.hist_bins,
-                        orient=p.orient, pix_per_cell=p.pix_per_cell,
-                        cell_per_block=p.cell_per_block,
-                        hog_channel=p.hog_channel, spatial_feat=p.spatial_feat,
-                        hist_feat=p.hist_feat, hog_feat=p.hog_feat)
+sample_feature_matrix = utils.extract_features([cars[0]], color_space=p['color_space'],
+                        spatial_size=p['spatial_size'], hist_bins=p['hist_bins'],
+                        orient=p['orient'], pix_per_cell=p['pix_per_cell'],
+                        cell_per_block=p['cell_per_block'],
+                        hog_channel=p['hog_channel'], spatial_feat=p['spatial_feat'],
+                        hist_feat=p['hist_feat'], hog_feat=p['hog_feat'])
 print('Feature matrix size: {}'.format(len(sample_feature_matrix[0])))
 
-car_features = utils.extract_features(cars, color_space=p.color_space,
-                        spatial_size=p.spatial_size, hist_bins=p.hist_bins,
-                        orient=p.orient, pix_per_cell=p.pix_per_cell,
-                        cell_per_block=p.cell_per_block,
-                        hog_channel=p.hog_channel, spatial_feat=p.spatial_feat,
-                        hist_feat=p.hist_feat, hog_feat=p.hog_feat)
-notcar_features = utils.extract_features(notcars, color_space=p.color_space,
-                        spatial_size=p.spatial_size, hist_bins=p.hist_bins,
-                        orient=p.orient, pix_per_cell=p.pix_per_cell,
-                        cell_per_block=p.cell_per_block,
-                        hog_channel=p.hog_channel, spatial_feat=p.spatial_feat,
-                        hist_feat=p.hist_feat, hog_feat=p.hog_feat)
+car_features = utils.extract_features(cars, color_space=p['color_space'],
+                        spatial_size=p['spatial_size'], hist_bins=p['hist_bins'],
+                        orient=p['orient'], pix_per_cell=p['pix_per_cell'],
+                        cell_per_block=p['cell_per_block'],
+                        hog_channel=p['hog_channel'], spatial_feat=p['spatial_feat'],
+                        hist_feat=p['hist_feat'], hog_feat=p['hog_feat'])
+notcar_features = utils.extract_features(notcars, color_space=p['color_space'],
+                        spatial_size=p['spatial_size'], hist_bins=p['hist_bins'],
+                        orient=p['orient'], pix_per_cell=p['pix_per_cell'],
+                        cell_per_block=p['cell_per_block'],
+                        hog_channel=p['hog_channel'], spatial_feat=p['spatial_feat'],
+                        hist_feat=p['hist_feat'], hog_feat=p['hog_feat'])
 
 
 
@@ -89,35 +90,32 @@ rand_state = np.random.randint(0, 100)
 X_train, X_test, y_train, y_test = train_test_split(
     scaled_X, y, test_size=0.3, random_state=rand_state)
 
-print('Using:',p.orient,'orientations',p.pix_per_cell,
-    'pixels per cell and', p.cell_per_block,'cells per block')
+print('Using:',p['orient'], 'orientations', p['pix_per_cell'], 'pixels per cell and', p['cell_per_block'], 'cells per block')
 print('Feature vector length:', len(X_train[0]))
 
 # Use a linear SVC
-# svc = LinearSVC()
-from sklearn import svm
-clf = svm.SVC()
+from sklearn.svm import LinearSVC
+clf = LinearSVC()
+
+# from sklearn import svm
+# clf = svm.SVC()
 
 model_parameters_map = {
     'clf': clf,
+    'scaler': X_scaler,
     'parameters': p
 }
-
-print('Saving pickle')
-with open('model-only.pickle', 'wb') as f:
-    pickle.dump(clf, f)
-    f.close()
-
-with open('with-new-data.pickle', 'wb') as f:
-    pickle.dump(model_parameters_map, f)
-    f.close()
 
 # Check the training time for the SVC
 t = time.time()
 clf.fit(X_train, y_train)
 t2 = time.time()
-print(round(t2-t, 2), 'Seconds to train SVC...')
 
+print('Saving pickle')
+with open(output_model_path, 'wb') as f:
+    pickle.dump(model_parameters_map, f)
+    f.close()
+print(round(t2-t, 2), 'Seconds to train SVC...')
 
 # Check the score of the SVC
 print('Test Accuracy of SVC = ', round(clf.score(X_test, y_test), 4))
